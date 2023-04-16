@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8>
+  <title>Yodlr Admin Portal</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>User Administration</h1>
+    <table class="table" id="user-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Email</th>
+          <th>State</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <script>
+    function fetchUsers() {
+      fetch('/users')
+        .then(response => response.json())
+        .then(users => {
+          const tableBody = document.querySelector('#user-table tbody');
+          users.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${user.id}</td>
+              <td>${user.firstName}</td>
+              <td>${user.lastName}</td>
+              <td>${user.email}</td>
+              <td>${user.state}</td>
+              <td>
+                <button id="edit-user-${user.id}" class="btn btn-primary btn-sm">Edit</button>
+                <button id="delete-user-${user.id}" class="btn btn-danger btn-sm">Delete</button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+
+            document.getElementById(`edit-user-${user.id}`).addEventListener('click', () => {
+              editUser(user.id);
+            });
+
+            document.getElementById(`delete-user-${user.id}`).addEventListener('click', () => {
+              deleteUser(user.id);
+            });
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while fetching users. Please try again.');
+        });
+    }
+
+    // Function for editing a user
+    function editUser(userId) {
+      const userEmail = prompt('Enter the new email:');
+      const userFirstName = prompt('Enter the new first name:');
+      const userLastName = prompt('Enter the new last name:');
+      const userState = prompt('Enter the new state:');
+
+      fetch(`/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          firstName: userFirstName,
+          lastName: userLastName,
+          state: userState
+        })
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error updating user');
+          }
+          return response.json();
+        })
+        .then(updatedUser => {
+          console.log('User updated:', updatedUser);
+          location.reload(); // Reload the page to reflect the changes
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while updating the user. Please try again.');
+        });
+    }
+
+    // Function for deleting a user
+    function deleteUser(userId) {
+      if (confirm('Are you sure you want to delete this user?')) {
+        fetch(`/users/${userId}`, {
+          method: 'DELETE'
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Error deleting user');
+            }
+            console.log(`User with id ${userId} deleted.`);
+            location.reload(); // Reload the page to reflect the changes
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the user. Please try again.');
+          });
+      }
+    }
+
+    fetchUsers();
+  </script>
+</body>
+</html>
+
